@@ -7,6 +7,9 @@ const Bug = require('../models/Bug');
 const User = require('../models/User');
 
 // ── MULTER SETUP ──
+const fs = require('fs');
+const uploadDir = 'uploads/';
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
   filename: (req, file, cb) => {
