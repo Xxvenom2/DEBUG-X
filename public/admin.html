@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DebugX — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #07090f;
+      --card: #0f1520;
+      --border: rgba(59,130,246,0.15);
+      --blue: #3b82f6;
+      --blue2: #60a5fa;
+      --blue-glow: rgba(59,130,246,0.4);
+      --text: #e2e8f0;
+      --muted: #64748b;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px; height: 64px;
+      background: rgba(7,9,15,0.9);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-icon {
+      width: 32px; height: 32px; background: var(--blue); border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 12px; color: white;
+      box-shadow: 0 0 12px var(--blue-glow);
+    }
+    .logo-text { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; color: white; }
+    .logo-text span { color: var(--blue2); }
+
+    .admin-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 100px;
+      font-size: 11px; font-weight: 600; color: #fca5a5;
+      letter-spacing: 1px; text-transform: uppercase;
+    }
+
+    .btn-logout {
+      padding: 7px 16px; border: 1px solid var(--border); background: transparent;
+      color: var(--muted); border-radius: 8px; font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-logout:hover { border-color: #ef4444; color: #fca5a5; }
+
+    main {
+      position: relative; z-index: 1;
+      max-width: 1100px; margin: 0 auto; padding: 48px 24px;
+    }
+
+    .page-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 40px; flex-wrap: wrap; gap: 16px;
+    }
+
+    .page-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem; font-weight: 800; color: white; letter-spacing: -1px; margin-bottom: 4px;
+    }
+    .page-sub { color: var(--muted); font-size: 0.9rem; }
+
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px; }
+
+    .stat-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px;
+      transition: all 0.3s;
+    }
+    .stat-card:hover { border-color: var(--blue); box-shadow: 0 0 20px rgba(59,130,246,0.15); }
+    .stat-label { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase; }
+    .stat-value { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; color: white; }
+
+    /* FILTER BAR */
+    .filter-bar {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 24px; flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 7px 16px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      border-radius: 8px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-btn.active, .filter-btn:hover {
+      border-color: var(--blue);
+      color: var(--blue2);
+      background: rgba(59,130,246,0.08);
+    }
+
+    .search-input {
+      padding: 8px 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      outline: none;
+      transition: all 0.2s;
+      min-width: 220px;
+    }
+
+    .search-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+    .search-input::placeholder { color: var(--muted); }
+
+    /* TABLE */
+    .table-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      padding: 12px 20px; text-align: left; font-size: 11px; font-weight: 600;
+      color: var(--muted); letter-spacing: 1px; text-transform: uppercase;
+      border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02);
+    }
+    td { padding: 16px 20px; font-size: 13px; color: var(--text); border-bottom: 1px solid rgba(59,130,246,0.06); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(59,130,246,0.03); }
+
+    .badge {
+      display: inline-block; padding: 3px 10px;
+      border-radius: 100px; font-size: 11px; font-weight: 600;
+    }
+    .badge-open { background: rgba(59,130,246,0.15); color: var(--blue2); }
+    .badge-progress { background: rgba(234,179,8,0.15); color: #fde047; }
+    .badge-done { background: rgba(34,197,94,0.15); color: #86efac; }
+
+    .status-select {
+      padding: 4px 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .status-select:focus { border-color: var(--blue); }
+
+    .desc-cell {
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--muted);
+    }
+
+    .empty-state { padding: 48px; text-align: center; color: var(--muted); font-size: 14px; }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+    .delete-btn {
+      padding: 4px 10px;
+      background: transparent;
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 6px;
+      color: #fca5a5;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .delete-btn:hover { background: rgba(239,68,68,0.1); }
+
+    @media (max-width: 768px) {
+      nav { padding: 0 16px; }
+      main { padding: 32px 16px; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      table { font-size: 12px; }
+      td, th { padding: 10px 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="index.html" class="logo">
+      <div class="logo-icon">DX</div>
+      <span class="logo-text">Debug<span>X</span></span>
+    </a>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="admin-badge">⚡ Admin</div>
+      <button class="btn-logout" onclick="logout()">Log out</button>
+    </div>
+  </nav>
+
+  <main>
+    <div class="page-header">
+      <div>
+        <div class="page-title">Admin Panel</div>
+        <div class="page-sub">Manage and respond to all bug submissions.</div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Bugs</div>
+        <div class="stat-value" id="statTotal">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Open</div>
+        <div class="stat-value" id="statOpen" style="color:var(--blue2)">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">In Progress</div>
+        <div class="stat-value" id="statProgress" style="color:#fde047">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Resolved</div>
+        <div class="stat-value" id="statDone" style="color:#86efac">0</div>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterBugs('all', this)">All</button>
+      <button class="filter-btn" onclick="filterBugs('open', this)">Open</button>
+      <button class="filter-btn" onclick="filterBugs('in-progress', this)">In Progress</button>
+      <button class="filter-btn" onclick="filterBugs('resolved', this)">Resolved</button>
+      <input type="text" class="search-input" placeholder="🔍 Search bugs..." oninput="searchBugs(this.value)" />
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card" id="tableCard">
+      <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <div>Loading submissions...</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let allBugs = [];
+    let currentFilter = 'all';
+    let currentSearch = '';
+
+    async function loadBugs() {
+      try {
+        const res = await fetch('/api/bugs/all');
+        if (res.status === 401 || res.status === 403) { window.location.href = '/login.html'; return; }
+        allBugs = await res.json();
+        updateStats();
+        renderTable();
+      } catch (err) {
+        console.error('Failed to load', err);
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('statTotal').textContent = allBugs.length;
+      document.getElementById('statOpen').textContent = allBugs.filter(b => b.status === 'open').length;
+      document.getElementById('statProgress').textContent = allBugs.filter(b => b.status === 'in-progress').length;
+      document.getElementById('statDone').textContent = allBugs.filter(b => b.status === 'resolved').length;
+    }
+
+    function renderTable() {
+      let bugs = allBugs;
+
+      if (currentFilter !== 'all') bugs = bugs.filter(b => b.status === currentFilter);
+      if (currentSearch) bugs = bugs.filter(b =>
+        b.title.toLowerCase().includes(currentSearch) ||
+        b.submittedBy?.toLowerCase().includes(currentSearch) ||
+        b.category?.toLowerCase().includes(currentSearch)
+      );
+
+      const card = document.getElementById('tableCard');
+
+      if (bugs.length === 0) {
+        card.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div>No submissions found.</div></div>`;
+        return;
+      }
+
+      card.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Title</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th>Submitted By</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>File</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${bugs.map((bug, i) => `
+              <tr>
+                <td style="color:var(--muted)">${i + 1}</td>
+                <td><strong style="color:white">${bug.title}</strong></td>
+                <td class="desc-cell" title="${bug.description}">${bug.description}</td>
+                <td><span style="color:var(--blue2);font-size:12px">${bug.category}</span></td>
+                <td style="color:var(--muted)">${bug.submittedBy || '—'}</td>
+                <td>
+                  <select class="status-select" onchange="updateStatus('${bug._id}', this.value)">
+                    <option value="open" ${bug.status === 'open' ? 'selected' : ''}>Open</option>
+                    <option value="in-progress" ${bug.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
+                    <option value="resolved" ${bug.status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                  </select>
+                </td>
+                <td style="color:var(--muted)">${new Date(bug.createdAt).toLocaleDateString()}</td>
+                <td>${bug.file ? `<a href="/uploads/${bug.file}" target="_blank" style="color:var(--blue2);font-size:12px">View</a>` : '—'}</td>
+                <td><button class="delete-btn" onclick="deleteBug('${bug._id}')">Delete</button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function updateStatus(id, status) {
+      try {
+        await fetch(`/api/bugs/${id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        const bug = allBugs.find(b => b._id === id);
+        if (bug) bug.status = status;
+        updateStats();
+      } catch (err) {
+        console.error('Failed to update status', err);
+      }
+    }
+
+    async function deleteBug(id) {
+      if (!confirm('Delete this bug report?')) return;
+      try {
+        await fetch(`/api/bugs/${id}`, { method: 'DELETE' });
+        allBugs = allBugs.filter(b => b._id !== id);
+        updateStats();
+        renderTable();
+      } catch (err) {
+        console.error('Delete failed', err);
+      }
+    }
+
+    function filterBugs(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTable();
+    }
+
+    function searchBugs(val) {
+      currentSearch = val.toLowerCase();
+      renderTable();
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/login.html';
+    }
+
+    loadBugs();
+  </script>
+</body>
+</html>
