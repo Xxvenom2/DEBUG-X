@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const Bug = require('../models/Bug');
 const User = require('../models/User');
 
@@ -30,15 +30,7 @@ const upload = multer({
 });
 
 // ── NODEMAILER TRANSPORTER ──
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ── MIDDLEWARE: require login ──
 function requireAuth(req, res, next) {
@@ -103,10 +95,15 @@ router.post('/', requireAuth, upload.single('file'), async (req, res) => {
       `
     };
 
-    transporter.sendMail(mailOptions, (err, info) => {
-      if (err) console.error('Email error:', err.message);
-      else console.log('Email sent:', info.messageId);
-    });
+   const { error } = await resend.emails.send({
+  from: 'DebugX <onboarding@resend.dev>',
+  to: process.env.OWNER_EMAIL,
+  subject: `🐛 New Bug Report: ${title}`,
+  html: mailOptions.html
+});
+
+if (error) console.error('Email error:', error.message);
+else console.log('Email sent successfully!');
 
     res.status(201).json({ message: 'Bug submitted successfully.', bug });
   } catch (err) {
