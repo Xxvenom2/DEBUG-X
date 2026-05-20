@@ -7,28 +7,28 @@ const Bug = require('../models/Bug');
 const User = require('../models/User');
 
 // ── MULTER SETUP ──
-const fs = require('fs');
-const uploadDir = 'uploads/';
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, unique + path.extname(file.originalname));
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'debugx',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'zip', 'txt']
   }
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|gif|pdf|zip|txt|js|html|css/;
-    const ext = allowed.test(path.extname(file.originalname).toLowerCase());
-    if (ext) cb(null, true);
-    else cb(new Error('File type not allowed.'));
-  }
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 });
-
+ 
 // ── NODEMAILER TRANSPORTER ──
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -60,7 +60,7 @@ router.post('/', requireAuth, upload.single('file'), async (req, res) => {
       title,
       description,
       category: category || 'other',
-      file: req.file ? req.file.filename : null,
+      file: req.file ? req.file.path : null,
       submittedBy: user.email,
       userId: user._id
     });
@@ -102,13 +102,14 @@ router.post('/', requireAuth, upload.single('file'), async (req, res) => {
   html: mailOptions.html
 });
 
-if (error) console.error('Email error:', error.message);
+if (error) console.error('Email error:', JSON.stringify(error));
 else console.log('Email sent successfully!');
 
     res.status(201).json({ message: 'Bug submitted successfully.', bug });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error.' });
+ } catch (err) {
+    console.error('FULL ERROR:', JSON.stringify(err, null, 2));
+    console.error('ERROR MESSAGE:', err.message);
+    res.status(500).json({ message: err.message });
   }
 });
 
